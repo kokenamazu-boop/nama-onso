@@ -10,6 +10,11 @@
 > A small Windows tool that cuts phonemes out of singing/voice WAVs, organises them in a
 > SQLite index, exports UTAU/OpenUtau banks, and curates raw CV takes before auto-OTO.
 
+## ダウンロード
+
+ビルド済みの Windows 版（onedir zip、インストーラーなし）は
+[Releases](https://github.com/kokenamazu-boop/nama-onso/releases/latest) から取得できます。
+
 ---
 
 ## 必要なもの
