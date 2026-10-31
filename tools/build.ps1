@@ -46,6 +46,12 @@ if (Test-Path -LiteralPath $readme) {
     Copy-Item -LiteralPath $readme -Destination (Join-Path $dist 'README.md') -Force
     Write-Host 'Copied DISTRIBUTION.md as README.md.'
 }
+foreach ($doc in @('LICENSE', 'THIRD_PARTY.md')) {
+    $source = Join-Path $src $doc
+    if (Test-Path -LiteralPath $source) {
+        Copy-Item -LiteralPath $source -Destination (Join-Path $app $doc) -Force
+    }
+}
 
 Write-Host "Built:" $exe
 Get-Item -LiteralPath $exe | Select-Object Name, Length | Format-List | Out-Host
