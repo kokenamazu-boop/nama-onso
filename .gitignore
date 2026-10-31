@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Build output
+build/
+dist/
+_releases/
+*.spec
+*.exe
+
+# Local models and audio (never commit user material)
+models/
+*.wav
+*.nama-voices.json
+*.db
+*.csv
+*.tsv
+
+# Editor / OS
+.vs/
+.vscode/
+.idea/
+*.user
+Thumbs.db
+desktop.ini
