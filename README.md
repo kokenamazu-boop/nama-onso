@@ -1,7 +1,7 @@
 # なま音素 (Nama Onso)
 
-歌・セリフ・効果音などの WAV から**音素（モーラ）を切り出して名前を付け、検索・整理・書き出し**する Windows 用ツールです。
-切り出した素材は WAV / CSV / JSON で取り出せるので、**UTAU/OpenUtau に限らず**、DAW・サンプラー・効果音管理・コーパス作成などに使えます。
+歌・セリフなどの WAV から**音素（モーラ）を切り出して名前を付け、検索・整理・書き出し**する Windows 用ツールです。
+切り出した素材は WAV / CSV / JSON で取り出せるので、**UTAU/OpenUtau に限らず**、DAW・サンプラー・コーパス作成などに使えます。
 
 - 音素の位置を自動推定し、波形を見ながら手で直せる
 - 素材は**元 WAV への参照**で保持（音声を複製しない・元ファイルを変更しない）
@@ -10,7 +10,7 @@
 - UTAU/OpenUtau 音源（`oto.ini` / `character.yaml` / `prefix.map`）の書き出しは**任意機能**
 - 録音テイクを解析して、使えるテイクだけを残す**「音素の選抜（間引き）」**つき
 
-> English: A Windows tool that cuts phonemes/morae out of singing, speech or effect WAVs,
+> English: A Windows tool that cuts phonemes/morae out of singing or speech WAVs,
 > names and indexes them in SQLite, and exports WAV/CSV/JSON for any sampler or DAW
 > (UTAU/OpenUtau voicebanks are an optional export target).
 
@@ -24,7 +24,7 @@
 ## 主な用途
 
 - 歌声やセリフから、発音ごとのワンショット素材を作る
-- DAW / サンプラー / 効果音管理用の音素ライブラリを作る
+- DAW / サンプラー用の音素ライブラリを作る
 - 録音テイクの品質を測り、使うテイクを選抜する
 - UTAU / OpenUtau 音源の下ごしらえ（任意）
 
@@ -67,7 +67,6 @@ python gui.py
 
 1. **WAVを開く** — 音素を切り出したい素材を選びます（元ファイルは変更しません）
 2. **読み（歌詞）** を入力して **自動で割り当て** — 音素の位置を推定し、モーラ単位にまとめます
-   - 読みが無い素材は、自動割り当てを使わずに手動で範囲を作れます
 3. 波形で境界を確認 — 境界の近く（5px以内）をドラッグ、または `←/→`（±5ms）、`Shift+←/→`（±50ms）、`Alt+←/→`（±1ms）
    - `Ctrl+Z` / `Ctrl+Y` で元に戻す／やり直し
    - 境界は **橙＝自動推定 / 緑＝確認済み**。「要確認だけ表示」で未確認だけに絞れます
@@ -273,7 +272,7 @@ python check_gui.py     # 画面のある環境で、GUI・Undo・選抜ウィ�
 ## 制限
 
 - 音素の自動推定は mVocalToolkit（TIFA）に依存し、**日本語の歌声・セリフ向け**です。精度は素材次第で、境界は耳で直してください
-- 自動割り当てには読み（かな）が必要です。読みが無い素材は手動で範囲を作ってください
+- 自動割り当てには読み（かな）が必要です。**読みが無い素材の手動カット（範囲の追加・結合）は未実装**です
 - GUI の試聴は winsound の簡易再生です（レイテンシー保証なし）
 - 音素の選抜は測定値による補助です。最終的な良し悪しは耳で確認してください
 - UTAU/OpenUtau の `oto.ini` は自動推定です。使う場合は各ソフトで微調整してください
