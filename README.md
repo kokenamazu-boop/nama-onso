@@ -25,7 +25,7 @@
 | tkinterdnd2 | 任意 | 表から他アプリへドラッグする場合 |
 
 ```powershell
-git clone <this repository>
+git clone https://github.com/kokenamazu-boop/nama-onso.git
 cd nama-onso
 python -m pip install -r requirements.txt
 ```
