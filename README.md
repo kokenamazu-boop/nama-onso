@@ -1,19 +1,32 @@
 # なま音素 (Nama Onso)
 
-歌やセリフの WAV から**発音（音素）を切り出し、名前を付けて音源素材にする**ための Windows 用ツールです。
-カットした素材を **UTAU / OpenUtau 用の音源フォルダ**へ書き出すところまでを担当します。
+歌・セリフ・効果音などの WAV から**音素（モーラ）を切り出して名前を付け、検索・整理・書き出し**する Windows 用ツールです。
+切り出した素材は WAV / CSV / JSON で取り出せるので、**UTAU/OpenUtau に限らず**、DAW・サンプラー・効果音管理・コーパス作成などに使えます。
 
-- GUI（tkinter）と CLI の両方があります
-- 元の WAV は**読み取り専用**。素材集 JSON・索引 DB・切り出した WAV だけを書き出します
-- 録音テイクを解析して、自動 OTO で破綻しやすいテイクを外す**「音素の選抜（間引き）」**つき
+- 音素の位置を自動推定し、波形を見ながら手で直せる
+- 素材は**元 WAV への参照**で保持（音声を複製しない・元ファイルを変更しない）
+- SQLite の索引で、発音・音程・長さ・前後の文脈から検索
+- 1候補1WAVで書き出し（44.1kHz / 24bit / モノラル）。CSV・JSON・REAPER用プロジェクトにも対応
+- UTAU/OpenUtau 音源（`oto.ini` / `character.yaml` / `prefix.map`）の書き出しは**任意機能**
+- 録音テイクを解析して、使えるテイクだけを残す**「音素の選抜（間引き）」**つき
 
-> A small Windows tool that cuts phonemes out of singing/voice WAVs, organises them in a
-> SQLite index, exports UTAU/OpenUtau banks, and curates raw CV takes before auto-OTO.
+> English: A Windows tool that cuts phonemes/morae out of singing, speech or effect WAVs,
+> names and indexes them in SQLite, and exports WAV/CSV/JSON for any sampler or DAW
+> (UTAU/OpenUtau voicebanks are an optional export target).
 
 ## ダウンロード
 
 ビルド済みの Windows 版（onedir zip、インストーラーなし）は
 [Releases](https://github.com/kokenamazu-boop/nama-onso/releases/latest) から取得できます。
+
+---
+
+## 主な用途
+
+- 歌声やセリフから、発音ごとのワンショット素材を作る
+- DAW / サンプラー / 効果音管理用の音素ライブラリを作る
+- 録音テイクの品質を測り、使うテイクを選抜する
+- UTAU / OpenUtau 音源の下ごしらえ（任意）
 
 ---
 
@@ -35,7 +48,7 @@ cd nama-onso
 python -m pip install -r requirements.txt
 ```
 
-`mvt` の導入（「ヘルプ」画面のボタンからも実行できます）:
+音素の自動推定を使う場合（「ヘルプ」画面のボタンからも導入できます）:
 
 ```powershell
 uv tool install git+https://github.com/Megageorgio/mVocalToolkit
@@ -52,18 +65,61 @@ FCPE モデルは `models\fcpe.onnx` などに置きます（リポジトリに�
 python gui.py
 ```
 
-1. **WAVを開く** — 声だけの素材を選びます（元ファイルは変更しません）
-2. **歌詞**を入力して **自動で割り当て** — 音素の位置を推定し、モーラ単位にまとめます
+1. **WAVを開く** — 音素を切り出したい素材を選びます（元ファイルは変更しません）
+2. **読み（歌詞）** を入力して **自動で割り当て** — 音素の位置を推定し、モーラ単位にまとめます
+   - 読みが無い素材は、自動割り当てを使わずに手動で範囲を作れます
 3. 波形で境界を確認 — 境界の近く（5px以内）をドラッグ、または `←/→`（±5ms）、`Shift+←/→`（±50ms）、`Alt+←/→`（±1ms）
    - `Ctrl+Z` / `Ctrl+Y` で元に戻す／やり直し
    - 境界は **橙＝自動推定 / 緑＝確認済み**。「要確認だけ表示」で未確認だけに絞れます
 4. 必要なら名前を変更 — **素材集を保存**（`<WAV名>.nama-voices.json`）
-5. **音素DB** で索引・検索・試聴・UTAU書き出し・ドラッグ＆ドロップ
-6. **音素の選抜** で、録音テイクのフォルダから `_L`/`_H` の2テイクへ間引き
+5. **音素DB** で索引・検索・試聴・ドラッグ＆ドロップ・書き出し
+6. 録音テイクをまとめて選抜するときは **音素の選抜**
+
+---
+
+## できること
+
+### 取り込みと修正
+
+- mVocalToolkit（TIFA）による音素位置の推定と、モーラ単位へのまとめ
+- カタカナ→ひらがな、音素→かなの命名
+- 境界のドラッグ／キー操作、Undo/Redo
+- 冒頭・末尾の無音補正、モーラ数不一致の保護
+- フォルダ一括処理（`曲名_歌詞.wav`、同名 `.txt`、既存スキップ、レポートTSV）
+
+### 音素DB（SQLite 索引）
+
+- 発音・子音・母音・前の母音・次の子音・音程・長さ・曲名で検索／並べ替え
+- ★・非表示・タグ（索引側だけに保存。索引を作り直しても残る）
+- 近い重複の整理、複数フォルダの統合
+- 試聴、元フレーズを開く、CSV 書き出し
+- 表から REAPER やエクスプローラーへ直接ドラッグ
+
+### 書き出し（用途別）
+
+- **WAV** — 1候補1ファイル。44.1kHz / 24bit / モノラルに統一（`--pattern` で命名可）
+- **CSV** — 発音・音素・前後文脈・音程・長さ・★/非表示・タグ・元WAVの一覧
+- **library.json** — 素材集のパスとハッシュの一覧
+- **REAPER用プロジェクト** — 候補をリージョン、音素の開始をマーカーにした確認用
+- **UTAU / OpenUtau 音源（任意）** — WAV＋`oto.ini`＋`character.yaml`＋`prefix.map`
+
+### 音素の選抜（間引き）
+
+録音したテイク（`かD#45.wav` のような1ファイル1音節）から、**使う WAV を選びます**。
+OTO のタイミング生成はしません。
+
+- ハード除外：長さ150ms未満 / 母音40ms未満 / クリップ5超 / ピーク −1〜−24dBFS 外 / 可聴点なし
+- 破裂音は 5ms の dB 上昇、濁破裂音は prevoicing、ざ行は voice bar で評価
+- スコアは「長さ・母音・頭の無音・SNR のコスト ＋ 2×音程差 − 0.8×jump − 0.4×prevoicing − 0.5×voice bar」
+- どのエイリアスも最低1テイク残す。1本だけなら同じ WAV を両方に割り当て、`scarce`＋再録P1
+- 2テイク（`_L`/`_H`）／1テイク／合格全部の3モード
+- 再録候補は P0（破裂/voice barなし）→ P1（弱い・短い）→ P2（トリム可）で `rerecord.csv`
 
 ---
 
 ## CLI
+
+すべて `python <script>.py` で実行できます。`--help` で引数を確認してください。
 
 ### フォルダ一括処理
 
@@ -73,7 +129,7 @@ python batch.py D:\recordings\phrases --dry-run
 python batch.py D:\recordings\phrases --limit 3
 ```
 
-- 歌詞は同名の `.txt`（1行目）か、`曲名_歌詞.wav` の右側を使います
+- 読みは同名の `.txt`（1行目）か、`曲名_歌詞.wav` の右側を使います
 - 既存の素材集 JSON・同じ音声（SHA-256）はスキップ。`batch-report.tsv` に結果を残します
 - 元 WAV は変更しません
 
@@ -87,7 +143,7 @@ python coverage.py D:\recordings\phrases --target "みえてるずっとさき�
 
 発音ごとの候補数・音程・長さ、1件しかない発音、未収録を表示します（読み取り専用）。
 
-### 音素DB（SQLite 索引）
+### 音素DB
 
 ```text
 python db.py build   D:\recordings\phrases
@@ -96,7 +152,6 @@ python db.py flag    D:\recordings\phrases --name あ --favorite
 python db.py duplicates D:\recordings\phrases [--hide]
 python db.py export-wavs D:\recordings\phrases D:\out
 python db.py export-csv  D:\recordings\phrases D:\out\phonemes.csv
-python db.py export-utau D:\recordings\phrases D:\out\utau --min-ms 100
 python db.py export-library D:\recordings\phrases library.json
 ```
 
@@ -104,23 +159,19 @@ python db.py export-library D:\recordings\phrases library.json
 - ★・非表示・別名は索引側だけに保存し、索引を作り直しても残ります
 - 音声は複製しません（元 WAV の区間を参照）
 
-### UTAU / OpenUtau 書き出し
+### 書き出し
 
 ```text
-python db.py export-utau FOLDER OUT_DIR [--name 音源名] [--author 作者]
-                    [--multiple] [--vcv] [--favorites] [--min-ms ミリ秒]
+python db.py export-wavs FOLDER OUT_DIR [--pattern "{name}_{note}_{index}"]
+python db.py export-csv  FOLDER OUT.csv [--favorites] [--hidden]
+python db.py export-library FOLDER library.json
+python db.py export-utau FOLDER OUT_DIR [--multiple] [--vcv] [--min-ms 100]
 ```
 
-- WAV + `oto.ini` + `character.txt`（cp932・CRLF）
-- 別名は `あ` / 複数は `あA3`。**ファイル名・別名に `_` は使いません**
-- `--min-ms` で「これより短い候補」を除外できます（0 で全部）
-- oto.ini の値は自動推定です。UTAU 側での微調整を前提にしてください
-- 書き出す WAV は **44.1kHz / 24bit / モノラル** に統一します
+`export-utau` は任意の書き出し先です（UTAU/OpenUtau を使う場合のみ）。
+WAV はすべて 44.1kHz / 24bit / モノラルに変換します。
 
-### 音素の選抜（間引き・AutoOTO前処理）
-
-録音したテイク（`かD#45.wav` のような1ファイル1音節）から、**使う WAV を選びます**。
-OTO のタイミング生成はしません。
+### 音素の選抜
 
 ```text
 python curate.py --root D:\recordings\takes --out D:\recordings\takes_2take
@@ -130,21 +181,14 @@ python curate.py --root ... --out ... --split-note F#4
 python curate.py --root ... --out ... --oto oto.ini --fix-oto
 ```
 
-- ハード除外：長さ150ms未満 / 母音40ms未満 / クリップ5超 / ピーク −1〜−24dBFS 外 / 可聴点なし
-- 破裂音は 5ms の dB 上昇、濁破裂音は prevoicing、ざ行は voice bar で評価
-- スコアは「長さ・母音・頭の無音・SNR のコスト ＋ 2×音程差 − 0.8×jump − 0.4×prevoicing − 0.5×voice bar」
-- `_L` は D4、`_H` は A4 付近を狙う。低音>高音なら入れ替え
-- **どのエイリアスも最低1テイク残す**。1本だけなら同じ WAV を両方に割り当て、`scarce`＋再録P1
-- 再録候補は P0（破裂/voice barなし）→ P1（弱い・短い）→ P2（トリム可）で `rerecord.csv`
-
-出力:
+出力：
 
 ```text
 出力/
   wav/            採用したWAV（コピー）
-  oto.ini         alias に _L/_H を付けた行
-  character.yaml  OpenUtau 用 subbanks（C1-F#4 / G4-B7）
-  prefix.map      classic UTAU 用（タブ区切り3列、two_take のとき）
+  oto.ini         UTAU/OpenUtau 用（two_take の alias）
+  character.yaml  OpenUtau 用 subbanks（two_take のとき）
+  prefix.map      classic UTAU 用（two_take のとき）
   selection.csv   採用テイクとスコア
   rejected.csv    除外理由（ハード除外 + 選抜外）
   rerecord.csv    再録候補（P0/P1/P2）
@@ -228,9 +272,11 @@ python check_gui.py     # 画面のある環境で、GUI・Undo・選抜ウィ�
 
 ## 制限
 
-- 音素推定は mVocalToolkit（TIFA）に依存します。精度は素材次第で、境界は耳で直してください
+- 音素の自動推定は mVocalToolkit（TIFA）に依存し、**日本語の歌声・セリフ向け**です。精度は素材次第で、境界は耳で直してください
+- 自動割り当てには読み（かな）が必要です。読みが無い素材は手動で範囲を作ってください
 - GUI の試聴は winsound の簡易再生です（レイテンシー保証なし）
 - 音素の選抜は測定値による補助です。最終的な良し悪しは耳で確認してください
+- UTAU/OpenUtau の `oto.ini` は自動推定です。使う場合は各ソフトで微調整してください
 - 長い曲を丸ごと渡す設計ではありません。まず1フレーズで確認する用途です
 
 ---
