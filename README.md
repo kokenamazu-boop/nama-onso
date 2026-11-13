@@ -18,7 +18,7 @@
 
 ビルド済みの Windows 版（onedir zip、インストーラーなし）は
 [Releases](https://github.com/kokenamazu-boop/nama-onso/releases/latest) から取得できます。
-
+不具合報告、機能追加等の要望は質問箱まで https://note.com/qa/namanamanamazun
 ---
 
 ## 主な用途
