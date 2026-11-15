@@ -17,6 +17,9 @@ Deliberate extensions over the spec table (all optional, result-only):
 * ``db.export_utau`` accepts ``name``, ``author``, ``vcv``, ``multiple``,
   ``favorites`` (same knobs as the tkinter dialog).
 * ``db.build`` accepts several folders and emits one progress event per folder.
+* ``wave.open`` can load an existing bank (``load_bank``) for the DB → waveform
+  tab connection.
+* ``wave.align`` runs in a worker thread and emits ``align`` / ``pitch`` progress.
 """
 from __future__ import annotations
 
@@ -25,6 +28,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 import traceback
 from typing import Any, Dict, List, Optional
 
@@ -37,6 +41,7 @@ import db  # noqa: E402
 
 PREVIEW_DIR = os.path.join(tempfile.gettempdir(), "nama_phoneme_preview")
 DRAG_DIR = os.path.join(tempfile.gettempdir(), "nama_phoneme_drag")
+EMIT_LOCK = threading.Lock()
 
 ROW_KEYS = ("bank_path", "unit_id", "name", "phonemes", "start", "end", "midi", "hz",
             "strength", "checked", "source", "lyrics", "cons", "vowel", "prev_vowel",
@@ -60,8 +65,9 @@ def log(*parts: Any) -> None:
 
 def emit(payload: Dict[str, Any]) -> None:
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    sys.stdout.buffer.write(data.encode("utf-8") + b"\n")
-    sys.stdout.buffer.flush()
+    with EMIT_LOCK:
+        sys.stdout.buffer.write(data.encode("utf-8") + b"\n")
+        sys.stdout.buffer.flush()
 
 
 def progress(**data: Any) -> None:
@@ -87,11 +93,53 @@ def _flag(value: Any) -> Optional[bool]:
     return bool(value)
 
 
+def _unit_from(data: Dict[str, Any]) -> core.Unit:
+    phonemes = data.get("phonemes") or []
+    if isinstance(phonemes, str):
+        phonemes = phonemes.split()
+    starts = []
+    for value in data.get("phoneme_starts") or []:
+        try:
+            starts.append(float(value))
+        except (TypeError, ValueError):
+            continue
+    return core.Unit(
+        str(data.get("name") or ""),
+        [str(p) for p in phonemes],
+        float(data.get("start") or 0.0),
+        float(data.get("end") or 0.0),
+        str(data.get("confidence") or ""),
+        starts,
+    )
+
+
+def _unit_to(unit: core.Unit) -> Dict[str, Any]:
+    return {
+        "name": unit.name,
+        "phonemes": list(unit.phonemes),
+        "phoneme_starts": list(unit.phoneme_starts),
+        "start": unit.start,
+        "end": unit.end,
+        "confidence": unit.confidence,
+    }
+
+
+def _pitch(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    return data if isinstance(data, dict) else {"midi": None, "hz": None, "strength": 0.0}
+
+
 class Sidecar:
     def __init__(self) -> None:
         self.conn = None
         self.db_path = ""
         self.folder = ""
+        self.wave_path = ""
+        self.wave_facts: Optional[core.WavFacts] = None
+        self.wave_bank_path = ""
+        self.wave_model = "tifa-1.0-st"
+        self.wave_song = ""
+        self.wave_lyrics = ""
+        self.wave_pitches: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------ state
     def close(self) -> None:
@@ -308,6 +356,144 @@ class Sidecar:
                 "name": row["display"], "bank_path": row["bank_path"],
                 "exists": bool(row["source"]) and os.path.isfile(row["source"])}
 
+    # ------------------------------------------------------------ waveform
+    def _require_wave(self) -> core.WavFacts:
+        if self.wave_facts is None:
+            raise RuntimeError("先にWAVを開いてください。")
+        return self.wave_facts
+
+    def wave_open(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        path = str(params.get("path") or "").strip()
+        if not path or not os.path.isfile(path):
+            raise ValueError(f"WAVが見つかりません: {path}")
+        facts = core.read_wav(path)
+        if facts.frames <= 0:
+            raise ValueError("空のWAVです。")
+        bucket = core.peak_bucket_seconds(facts)
+        grid = core.build_peak_grid(facts, bucket)
+        default_bank = core.default_bank_path(path)
+        bank_path = str(params.get("bank_path") or "").strip() or default_bank
+        units_out: List[Dict[str, Any]] = []
+        pitches_out: List[Dict[str, Any]] = []
+        lyrics = ""
+        model = "tifa-1.0-st"
+        song = ""
+        loaded = False
+        if params.get("load_bank") and os.path.isfile(bank_path):
+            bank = core.load_voicebank(bank_path)
+            lyrics = str(bank.get("lyrics") or "")
+            model = str(bank.get("model") or model)
+            song = str(bank.get("song") or "")
+            for unit in bank.get("units") or []:
+                units_out.append({
+                    "id": str(unit.get("id") or ""),
+                    "name": str(unit.get("name") or ""),
+                    "phonemes": str(unit.get("phonemes") or "").split(),
+                    "phoneme_starts": list(unit.get("phoneme_starts") or []),
+                    "start": float(unit.get("start") or 0.0),
+                    "end": float(unit.get("end") or 0.0),
+                    "confidence": str(unit.get("confidence") or "auto"),
+                })
+                pitches_out.append(_pitch(unit.get("pitch")))
+            loaded = True
+
+        self.wave_path = path
+        self.wave_facts = facts
+        self.wave_bank_path = bank_path
+        self.wave_model = model
+        self.wave_song = song
+        self.wave_lyrics = lyrics
+        self.wave_pitches = pitches_out
+
+        return {
+            "facts": {
+                "path": facts.path,
+                "seconds": facts.seconds,
+                "sample_rate": facts.sample_rate,
+                "channels": facts.channels,
+                "sampwidth": facts.width,
+                "frames": facts.frames,
+                "peak": facts.peak,
+                "sha256": facts.sha256,
+            },
+            "bank_path": bank_path,
+            "bank_exists": os.path.isfile(bank_path),
+            "peaks": {
+                "bucket": bucket,
+                "min": [round(lo, 5) for lo, _ in grid],
+                "max": [round(hi, 5) for _, hi in grid],
+            },
+            "units": units_out,
+            "pitches": pitches_out,
+            "lyrics": lyrics,
+            "model": model,
+            "song": song,
+            "bank_loaded": loaded,
+        }
+
+    def wave_align(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        facts = self._require_wave()
+        path = self.wave_path
+        model = self.wave_model
+        lyrics = str(params.get("lyrics") or "").strip()
+        if not lyrics:
+            raise ValueError("歌詞を入力してください。ファイル名でも構いません。")
+
+        result: Dict[str, Any] = {}
+        failure: List[BaseException] = []
+
+        def work() -> None:
+            try:
+                progress(phase="align", path=path)
+                segs = core.run_align(path, lyrics, model)
+                units = core.group_units(segs)
+                units, warn = core.name_units(units, lyrics)
+                units, note = core.trim_silence(units, facts)
+                pitches = []
+                total = len(units)
+                for index, unit in enumerate(units, start=1):
+                    progress(phase="pitch", index=index, total=total)
+                    pitches.append(core.unit_pitch(facts, unit))
+                result["units"] = [_unit_to(unit) for unit in units]
+                result["pitches"] = pitches
+                result["warn"] = warn
+                result["note"] = note
+                self.wave_pitches = pitches
+                self.wave_lyrics = lyrics
+            except BaseException as exc:  # noqa: BLE001 - forward to the response
+                failure.append(exc)
+
+        worker = threading.Thread(target=work, name="wave-align", daemon=True)
+        worker.start()
+        worker.join()
+        if failure:
+            raise failure[0]
+        return result
+
+    def wave_save(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        facts = self._require_wave()
+        items = params.get("units") or []
+        if not items:
+            raise ValueError("保存するものがありません。先に音素を割り当ててください。")
+        units = [_unit_from(item) for item in items]
+        lyrics = str(params.get("lyrics") or "")
+        pitches = self.wave_pitches if len(self.wave_pitches) == len(units) else [None] * len(units)
+        bank = core.make_voicebank(facts, units, lyrics, self.wave_model, pitches, song=self.wave_song)
+        core.save_voicebank(self.wave_bank_path, bank)
+        self.wave_lyrics = lyrics
+        pending = sum(1 for unit in units if unit.confidence != "checked")
+        return {"bank_path": self.wave_bank_path, "pending": pending}
+
+    def wave_export_rpp(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        facts = self._require_wave()
+        items = params.get("units") or []
+        if not items:
+            raise ValueError("先に音素を割り当ててください。")
+        units = [_unit_from(item) for item in items]
+        path = os.path.splitext(facts.path)[0] + "_音素ラベル.rpp"
+        core.write_reaper_project(path, facts.path, facts, units)
+        return {"path": path}
+
     # -------------------------------------------------------------- dispatch
     def dispatch(self, method: str, params: Dict[str, Any]) -> Any:
         handler = {
@@ -326,6 +512,10 @@ class Sidecar:
             "db.export_library": self.db_export_library,
             "db.import_fonemudb": self.db_import_fonemudb,
             "db.source": self.db_source,
+            "wave.open": self.wave_open,
+            "wave.align": self.wave_align,
+            "wave.save": self.wave_save,
+            "wave.export_rpp": self.wave_export_rpp,
         }.get(method)
         if handler is None:
             raise ValueError(f"unknown method: {method}")

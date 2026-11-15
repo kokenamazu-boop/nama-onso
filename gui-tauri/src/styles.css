@@ -1,20 +1,69 @@
 :root {
-  --bg: #0a0c11;
-  --panel: #11141b;
-  --panel-2: #151922;
-  --surface: #1b202a;
-  --surface-hover: #232a36;
-  --text: #e8edf3;
-  --muted: #8a94a2;
-  --line: #252c37;
-  --line-soft: #1c222b;
-  --accent: #f59a45;
-  --accent-soft: rgba(245, 154, 69, 0.14);
-  --accent-strong: rgba(245, 154, 69, 0.26);
-  --accent-ink: #1b1208;
-  --danger: #f07f6e;
+  --bg: #f3f1ec;
+  --panel: #fcfbf8;
+  --panel-2: #efebe3;
+  --surface: #e8e3d9;
+  --surface-hover: #dfd8cc;
+  --text: #2c2b27;
+  --text-soft: #4b4943;
+  --muted: #726d63;
+  --line: #d7d1c5;
+  --line-soft: #e6e1d7;
+  --line-strong: #bdb5a7;
+  --accent: #6d7f6a;
+  --accent-hover: #7f927b;
+  --accent-soft: rgba(109, 127, 106, 0.13);
+  --accent-strong: rgba(109, 127, 106, 0.26);
+  --accent-ink: #fbfdf9;
+  --danger: #a84232;
+  --ok: #2f7c50;
+  --shadow: 0 18px 50px rgba(42, 38, 30, 0.18);
+  --input-bg: #fffefb;
+  --head-bg: #f0ece4;
+  --row-odd: rgba(42, 38, 30, 0.018);
+  --playing: rgba(109, 127, 106, 0.16);
+  --scroll: #c8c1b4;
+  --wave-grid: rgba(46, 45, 41, 0.10);
+  --wave-label: #8a857b;
+  --wave-checked: #2f8f4e;
+  --wave-pending: #c2741c;
+  --wave-select: #5f7565;
+  --wave-playhead: #b23b2e;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #17181a;
+  --panel: #1e2023;
+  --panel-2: #232529;
+  --surface: #2a2d31;
+  --surface-hover: #34383d;
+  --text: #e6e4df;
+  --text-soft: #c9c6bf;
+  --muted: #a09b92;
+  --line: #34373c;
+  --line-soft: #2b2e32;
+  --line-strong: #4b4f55;
+  --accent: #9db39a;
+  --accent-hover: #b1c6ae;
+  --accent-soft: rgba(157, 179, 154, 0.15);
+  --accent-strong: rgba(157, 179, 154, 0.28);
+  --accent-ink: #14180f;
+  --danger: #e07a6a;
   --ok: #57c795;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --input-bg: #141619;
+  --head-bg: #191b1e;
+  --row-odd: rgba(255, 255, 255, 0.012);
+  --playing: rgba(157, 179, 154, 0.18);
+  --scroll: #454a51;
+  --wave-grid: rgba(232, 237, 243, 0.09);
+  --wave-label: #9a958c;
+  --wave-checked: #4cc38a;
+  --wave-pending: #d9a441;
+  --wave-select: #a9c0b3;
+  --wave-playhead: #f07f6e;
+  color-scheme: dark;
 }
 
 * {
@@ -55,7 +104,7 @@ button {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #333c49 transparent;
+  scrollbar-color: var(--scroll) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -64,23 +113,164 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2c3441;
+  background: var(--scroll);
   border: 3px solid transparent;
   border-radius: 6px;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4554;
+  background: var(--muted);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
-.app {
+/* ----------------------------------------------------------------- shell */
+.shell {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-width: 980px;
+}
+
+.shell-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.shell-mark {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.shell-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.shell-title small {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.shell-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 100%;
+  margin-left: 6px;
+}
+
+.shell-tab {
+  padding: 0 14px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.shell-tab:hover {
+  color: var(--text);
+}
+
+.shell-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.theme-switch {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.theme-switch button {
+  padding: 3px 9px;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.theme-switch button.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.shell-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.tab-host {
+  height: 100%;
+  min-height: 0;
+}
+
+.tab-host[hidden] {
+  display: none;
+}
+
+.tab-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.placeholder-pane {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.placeholder-pane h1 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.placeholder-pane p {
+  margin: 0;
+  font-size: 12px;
 }
 
 /* ---------------------------------------------------------------- topbar */
@@ -112,7 +302,7 @@ button {
   color: var(--accent-ink);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 1px 6px rgba(245, 154, 69, 0.28);
+  box-shadow: 0 1px 6px var(--accent-soft);
 }
 
 .brand-name {
@@ -159,12 +349,12 @@ button {
 
 .db-pill.empty {
   color: var(--danger);
-  border-color: rgba(240, 127, 110, 0.35);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 input,
 select {
-  background: #0c0f14;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: 5px;
   padding: 3px 7px;
@@ -173,7 +363,8 @@ select {
 }
 
 input::placeholder {
-  color: #5a6370;
+  color: var(--muted);
+  opacity: 0.7;
 }
 
 input:focus,
@@ -200,7 +391,7 @@ select {
 
 .btn:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: #3a4554;
+  border-color: var(--line-strong);
 }
 
 .btn:focus-visible {
@@ -216,8 +407,8 @@ select {
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: #ffad5f;
-  border-color: #ffad5f;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .btn.small {
@@ -359,7 +550,7 @@ select {
 .count-pill {
   margin-left: auto;
   padding: 1px 9px;
-  border: 1px solid rgba(245, 154, 69, 0.35);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius: 999px;
   background: var(--accent-soft);
   color: var(--accent);
@@ -382,7 +573,7 @@ select {
 }
 
 .table-wrap:focus-within {
-  border-color: #384354;
+  border-color: var(--line-strong);
 }
 
 .table-head,
@@ -397,7 +588,7 @@ select {
 .table-head {
   height: 30px;
   padding-right: 10px;
-  background: #12161e;
+  background: var(--head-bg);
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
 }
@@ -457,7 +648,7 @@ select {
 }
 
 .table-row.odd {
-  background: rgba(255, 255, 255, 0.012);
+  background: var(--row-odd);
 }
 
 .table-row:hover {
@@ -474,7 +665,7 @@ select {
 }
 
 .table-row.playing {
-  background: rgba(245, 154, 69, 0.22);
+  background: var(--playing);
 }
 
 .table-row.playing .col-name {
@@ -520,7 +711,7 @@ select {
 
 .col-midi,
 .col-ms {
-  color: #c8d0da;
+  color: var(--text-soft);
 }
 
 .col-song,
@@ -580,7 +771,7 @@ select {
 .spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(245, 154, 69, 0.25);
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -780,7 +971,7 @@ select {
 
 .path-box {
   padding: 6px 8px;
-  background: #0c0f14;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: 5px;
   font-family: Consolas, "Cascadia Mono", monospace;
@@ -793,4 +984,399 @@ select {
   .brand-name {
     display: none;
   }
+}
+
+/* --------------------------------------------------------------- waveform */
+.wave-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.wave-file {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.wave-lyrics {
+  flex: 1 1 240px;
+}
+
+.wave-lyrics input {
+  flex: 1;
+  width: auto;
+  min-width: 160px;
+}
+
+.wave-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 3px 14px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+.wave-status.error {
+  color: var(--danger);
+}
+
+.wave-file-info {
+  max-width: 54%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.wave-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wave-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.wave-panel {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 200px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wave-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.wave-placeholder p {
+  margin: 0;
+}
+
+.wave-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.wave-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.wave-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+}
+
+/* Regions plugin: keep the functional bands as a thin strip at the top.
+   wavesurfer v8 renders inside an open shadow root, so style through parts. */
+.wave-canvas > div::part(region) {
+  top: 0;
+  height: 18px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.wave-canvas > div::part(region-content) {
+  padding: 1px 4px;
+  color: var(--text);
+  font-size: 9.5px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.wave-grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 18px;
+  width: 1px;
+  background: var(--wave-grid);
+  pointer-events: none;
+}
+
+.wave-time-label {
+  position: absolute;
+  bottom: -17px;
+  left: 3px;
+  color: var(--wave-label);
+  font-size: 9.5px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.wave-boundary {
+  position: absolute;
+  top: 0;
+  bottom: 18px;
+  width: 2px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.wave-selected-frame {
+  position: absolute;
+  top: 0;
+  bottom: 18px;
+  box-sizing: border-box;
+  border: 2px solid;
+  pointer-events: none;
+}
+
+.wave-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 18px;
+  width: 2px;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+}
+
+.wave-phoneme-tick {
+  position: absolute;
+  bottom: 18px;
+  width: 1px;
+  height: 8px;
+  background: var(--wave-label);
+  pointer-events: none;
+}
+
+.wave-phoneme-label {
+  position: absolute;
+  bottom: 27px;
+  color: var(--wave-label);
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.wave-empty-hint {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.wave-view-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 2px;
+  color: var(--wave-label);
+  font-size: 9.5px;
+  pointer-events: none;
+}
+
+.wave-edge-badge {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 9.5px;
+  pointer-events: none;
+}
+
+.wave-bottom {
+  display: flex;
+  flex: 1.15 1 0;
+  min-height: 180px;
+  gap: 8px;
+}
+
+.unit-list-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.unit-head,
+.unit-row {
+  display: grid;
+  grid-template-columns: 28px 34px minmax(80px, 1fr) 126px 70px 72px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.unit-head {
+  height: 26px;
+  background: var(--head-bg);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10.5px;
+  flex: 0 0 auto;
+}
+
+.unit-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.unit-row {
+  width: 100%;
+  height: 24px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--text);
+  font-size: 11.5px;
+  text-align: left;
+}
+
+.unit-row:hover {
+  background: var(--surface);
+}
+
+.unit-row.selected {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.unit-row.playing {
+  background: var(--playing);
+}
+
+.unit-row.pending {
+  color: var(--wave-pending);
+}
+
+.unit-row.checked {
+  color: var(--text);
+}
+
+.unit-mark {
+  font-weight: 600;
+}
+
+.unit-number {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.unit-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unit-range,
+.unit-length,
+.unit-hz {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.unit-row.pending .unit-range,
+.unit-row.pending .unit-length,
+.unit-row.pending .unit-hz {
+  color: color-mix(in srgb, var(--wave-pending) 78%, var(--text));
+}
+
+.unit-empty {
+  padding: 24px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.wave-side {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 236px;
+  gap: 5px;
+  padding: 8px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.wave-side .btn {
+  width: 100%;
+}
+
+.button-pair {
+  display: flex;
+  gap: 4px;
+}
+
+.button-pair .btn {
+  flex: 1;
+}
+
+.side-label {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.nudge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.key-hint {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.55;
+}
+
+.pending-count {
+  color: var(--wave-pending);
+  font-size: 10.5px;
+}
+
+.wave-side .check {
+  margin: 1px 0;
+  font-size: 11px;
 }

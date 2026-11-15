@@ -136,3 +136,70 @@ export type PilotPaths = {
   repoRoot: string;
   dragIcon: string;
 };
+
+// ---------------------------------------------------------------- waveform
+export type Unit = {
+  id?: string;
+  name: string;
+  phonemes: string[];
+  phoneme_starts: number[];
+  start: number;
+  end: number;
+  confidence: string;
+};
+
+export type PitchData = {
+  midi?: number | null;
+  hz?: number | null;
+  strength?: number;
+  source?: string;
+  curve?: unknown;
+};
+
+export type WaveFacts = {
+  path: string;
+  seconds: number;
+  sample_rate: number;
+  channels: number;
+  sampwidth: number;
+  frames: number;
+  peak: number;
+  sha256: string;
+};
+
+export type WavePeaks = {
+  bucket: number;
+  min: number[];
+  max: number[];
+};
+
+export type WaveOpenResult = {
+  facts: WaveFacts;
+  bank_path: string;
+  bank_exists: boolean;
+  peaks: WavePeaks;
+  units: Unit[];
+  pitches: PitchData[];
+  lyrics: string;
+  model: string;
+  song: string;
+  bank_loaded: boolean;
+};
+
+export type WaveAlignResult = {
+  units: Unit[];
+  pitches: PitchData[];
+  warn: string;
+  note: string;
+};
+
+export type WaveOpenRequest = {
+  path: string;
+  bank_path?: string;
+  start?: number;
+  end?: number;
+  unit_id?: string;
+  token: number;
+};
+
+export type Theme = "light" | "dark";

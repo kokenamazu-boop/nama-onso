@@ -47,3 +47,12 @@ export async function readFileBytes(path: string): Promise<ArrayBuffer> {
 export function revealInExplorer(path: string): Promise<void> {
   return invoke("reveal_in_explorer", { path });
 }
+
+/** Allow the opened WAV through Tauri's asset protocol (streaming playback). */
+export function allowMediaPath(path: string): Promise<void> {
+  return invoke("allow_media_path", { path });
+}
+
+export function getStartupWav(): Promise<string | null> {
+  return invoke("startup_wav");
+}

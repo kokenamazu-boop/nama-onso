@@ -179,6 +179,16 @@ fn pilot_paths() -> PilotPaths {
     }
 }
 
+/// First existing .wav passed on the command line (`NamaOnso.exe take.wav`).
+#[tauri::command]
+fn startup_wav() -> Option<String> {
+    std::env::args().skip(1).find(|arg| {
+        !arg.starts_with('-')
+            && arg.to_ascii_lowercase().ends_with(".wav")
+            && PathBuf::from(arg).is_file()
+    })
+}
+
 /// Preview clips are small; hand the WAV bytes to WebAudio without a custom
 /// asset-protocol scope.
 #[tauri::command]
@@ -203,6 +213,30 @@ fn reveal_in_explorer(path: String) -> Result<(), String> {
         let _ = path;
         Err("エクスプローラー表示は Windows のみです。".to_string())
     }
+}
+
+/// Allow just the WAV the user opened to be streamed through Tauri's asset
+/// protocol (HTMLAudioElement). The config scope starts empty.
+#[tauri::command]
+fn allow_media_path(app: AppHandle, path: String) -> Result<(), String> {
+    let candidate = PathBuf::from(&path);
+    if !candidate.is_file() {
+        return Err("再生するファイルが見つかりません。".to_string());
+    }
+    let extension = candidate
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !matches!(
+        extension.as_str(),
+        "wav" | "mp3" | "flac" | "ogg" | "m4a" | "aac" | "aiff" | "aif"
+    ) {
+        return Err("音声ファイルではありません。".to_string());
+    }
+    app.asset_protocol_scope()
+        .allow_file(&candidate)
+        .map_err(|error| format!("再生用のパスを許可できません: {error}"))
 }
 
 fn spawn_sidecar(app: &AppHandle, inner: &Arc<Mutex<Inner>>) -> Result<(), String> {
@@ -411,7 +445,9 @@ async fn sidecar_call(
         || method.starts_with("db.export")
         || method.starts_with("db.import")
         || method == "db.hide_duplicates"
-        || method == "db.duplicates";
+        || method == "db.duplicates"
+        || method == "wave.align"
+        || method == "wave.open";
     let timeout = if long_running {
         Duration::from_secs(1800)
     } else {
@@ -442,7 +478,9 @@ pub fn run() {
             sidecar_call,
             sidecar_status,
             pilot_paths,
+            startup_wav,
             read_file_bytes,
+            allow_media_path,
             reveal_in_explorer
         ])
         .setup(|app| {
